@@ -2,22 +2,26 @@
 
 Tracks the [Australian Red Cross Lifeblood blood supply levels](https://www.lifeblood.com.au/donors/blood-plasma-platelets/blood-supply-levels) in Home Assistant, so you can see when your blood type is running low and get a nudge to book a donation.
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=gurrier&repository=lifeblood&category=integration)
-
 Lifeblood updates the figures once a day at about 6:00am (AEST/AEDT). The integration checks hourly.
 
 ☕ If this integration's useful to you, [buy me a coffee](https://ko-fi.com/gurrier).
 
 ## Installation
 
-### HACS
+### Manual
+
+1. Download this repository: **Code → Download ZIP**, and unzip it.
+2. Copy the `custom_components/lifeblood` folder into your Home Assistant `config/custom_components/` folder (create `custom_components` if it doesn't exist). You should end up with `config/custom_components/lifeblood/manifest.json`.
+3. Restart Home Assistant.
+
+To update, replace the folder with the new version and restart again.
+
+### HACS (custom repository)
+
+This integration isn't in the HACS default store yet, but you can add it yourself:
 
 1. In HACS, open the menu → **Custom repositories**, and add `https://github.com/gurrier/lifeblood` as an **Integration**.
 2. Install **Lifeblood Blood Supply Levels** and restart Home Assistant.
-
-### Manual
-
-Copy `custom_components/lifeblood` into your Home Assistant `config/custom_components/` directory and restart.
 
 ## Setup
 
