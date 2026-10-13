@@ -1,0 +1,116 @@
+{
+  "entity": {
+    "sensor": {
+      "o_positive": {
+        "default": "mdi:water",
+        "state": {
+          "critical": "mdi:water-alert",
+          "very_low": "mdi:water-alert",
+          "low": "mdi:water-minus",
+          "need_more": "mdi:water-minus",
+          "ok": "mdi:water",
+          "good": "mdi:water-check",
+          "not_collected": "mdi:water-off"
+        }
+      },
+      "o_negative": {
+        "default": "mdi:water",
+        "state": {
+          "critical": "mdi:water-alert",
+          "very_low": "mdi:water-alert",
+          "low": "mdi:water-minus",
+          "need_more": "mdi:water-minus",
+          "ok": "mdi:water",
+          "good": "mdi:water-check",
+          "not_collected": "mdi:water-off"
+        }
+      },
+      "a_positive": {
+        "default": "mdi:water",
+        "state": {
+          "critical": "mdi:water-alert",
+          "very_low": "mdi:water-alert",
+          "low": "mdi:water-minus",
+          "need_more": "mdi:water-minus",
+          "ok": "mdi:water",
+          "good": "mdi:water-check",
+          "not_collected": "mdi:water-off"
+        }
+      },
+      "a_negative": {
+        "default": "mdi:water",
+        "state": {
+          "critical": "mdi:water-alert",
+          "very_low": "mdi:water-alert",
+          "low": "mdi:water-minus",
+          "need_more": "mdi:water-minus",
+          "ok": "mdi:water",
+          "good": "mdi:water-check",
+          "not_collected": "mdi:water-off"
+        }
+      },
+      "b_positive": {
+        "default": "mdi:water",
+        "state": {
+          "critical": "mdi:water-alert",
+          "very_low": "mdi:water-alert",
+          "low": "mdi:water-minus",
+          "need_more": "mdi:water-minus",
+          "ok": "mdi:water",
+          "good": "mdi:water-check",
+          "not_collected": "mdi:water-off"
+        }
+      },
+      "b_negative": {
+        "default": "mdi:water",
+        "state": {
+          "critical": "mdi:water-alert",
+          "very_low": "mdi:water-alert",
+          "low": "mdi:water-minus",
+          "need_more": "mdi:water-minus",
+          "ok": "mdi:water",
+          "good": "mdi:water-check",
+          "not_collected": "mdi:water-off"
+        }
+      },
+      "ab_positive": {
+        "default": "mdi:water",
+        "state": {
+          "critical": "mdi:water-alert",
+          "very_low": "mdi:water-alert",
+          "low": "mdi:water-minus",
+          "need_more": "mdi:water-minus",
+          "ok": "mdi:water",
+          "good": "mdi:water-check",
+          "not_collected": "mdi:water-off"
+        }
+      },
+      "ab_negative": {
+        "default": "mdi:water",
+        "state": {
+          "critical": "mdi:water-alert",
+          "very_low": "mdi:water-alert",
+          "low": "mdi:water-minus",
+          "need_more": "mdi:water-minus",
+          "ok": "mdi:water",
+          "good": "mdi:water-check",
+          "not_collected": "mdi:water-off"
+        }
+      },
+      "plasma": {
+        "default": "mdi:water",
+        "state": {
+          "need_more": "mdi:water-minus",
+          "ok": "mdi:water",
+          "good": "mdi:water-check"
+        }
+      },
+      "plasma_supply": {
+        "default": "mdi:water-percent"
+      },
+      "last_updated": {
+        "default": "mdi:clock-outline"
+      }
+    }
+  }
+}

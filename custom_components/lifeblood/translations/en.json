@@ -1,0 +1,285 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Lifeblood blood supply levels",
+        "description": "Pick the region and the blood types you want to track. Add the integration again to track another region.",
+        "data": {
+          "region": "Region",
+          "blood_types": "Blood types"
+        },
+        "data_description": {
+          "region": "Lifeblood publishes figures for all of Australia and for each state and territory.",
+          "blood_types": "A sensor is created for each one ticked. You can change this later."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Couldn't reach the Lifeblood website.",
+      "cannot_parse": "The Lifeblood website responded, but the supply levels couldn't be read from it. The page layout may have changed.",
+      "no_blood_types": "Select at least one blood type."
+    },
+    "abort": {
+      "already_configured": "This region is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Blood types",
+        "data": {
+          "blood_types": "Blood types"
+        },
+        "data_description": {
+          "blood_types": "Sensors for unticked types are removed."
+        }
+      }
+    },
+    "error": {
+      "no_blood_types": "Select at least one blood type."
+    }
+  },
+  "selector": {
+    "region": {
+      "options": {
+        "national": "All Australia",
+        "act": "Australian Capital Territory",
+        "nsw": "New South Wales",
+        "nt": "Northern Territory",
+        "qld": "Queensland",
+        "sa": "South Australia",
+        "tas": "Tasmania",
+        "vic": "Victoria",
+        "wa": "Western Australia"
+      }
+    },
+    "blood_types": {
+      "options": {
+        "o_positive": "O+",
+        "o_negative": "O-",
+        "a_positive": "A+",
+        "a_negative": "A-",
+        "b_positive": "B+",
+        "b_negative": "B-",
+        "ab_positive": "AB+",
+        "ab_negative": "AB-",
+        "plasma": "Plasma"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "o_positive": {
+        "name": "O positive",
+        "state": {
+          "critical": "Critical",
+          "very_low": "Very low",
+          "low": "Low",
+          "need_more": "Need more",
+          "ok": "Ok",
+          "good": "Good",
+          "not_collected": "Not collected"
+        },
+        "state_attributes": {
+          "label": {
+            "name": "Label"
+          },
+          "appeal": {
+            "name": "Appeal",
+            "state": {
+              "true": "Yes",
+              "false": "No"
+            }
+          }
+        }
+      },
+      "o_negative": {
+        "name": "O negative",
+        "state": {
+          "critical": "Critical",
+          "very_low": "Very low",
+          "low": "Low",
+          "need_more": "Need more",
+          "ok": "Ok",
+          "good": "Good",
+          "not_collected": "Not collected"
+        },
+        "state_attributes": {
+          "label": {
+            "name": "Label"
+          },
+          "appeal": {
+            "name": "Appeal",
+            "state": {
+              "true": "Yes",
+              "false": "No"
+            }
+          }
+        }
+      },
+      "a_positive": {
+        "name": "A positive",
+        "state": {
+          "critical": "Critical",
+          "very_low": "Very low",
+          "low": "Low",
+          "need_more": "Need more",
+          "ok": "Ok",
+          "good": "Good",
+          "not_collected": "Not collected"
+        },
+        "state_attributes": {
+          "label": {
+            "name": "Label"
+          },
+          "appeal": {
+            "name": "Appeal",
+            "state": {
+              "true": "Yes",
+              "false": "No"
+            }
+          }
+        }
+      },
+      "a_negative": {
+        "name": "A negative",
+        "state": {
+          "critical": "Critical",
+          "very_low": "Very low",
+          "low": "Low",
+          "need_more": "Need more",
+          "ok": "Ok",
+          "good": "Good",
+          "not_collected": "Not collected"
+        },
+        "state_attributes": {
+          "label": {
+            "name": "Label"
+          },
+          "appeal": {
+            "name": "Appeal",
+            "state": {
+              "true": "Yes",
+              "false": "No"
+            }
+          }
+        }
+      },
+      "b_positive": {
+        "name": "B positive",
+        "state": {
+          "critical": "Critical",
+          "very_low": "Very low",
+          "low": "Low",
+          "need_more": "Need more",
+          "ok": "Ok",
+          "good": "Good",
+          "not_collected": "Not collected"
+        },
+        "state_attributes": {
+          "label": {
+            "name": "Label"
+          },
+          "appeal": {
+            "name": "Appeal",
+            "state": {
+              "true": "Yes",
+              "false": "No"
+            }
+          }
+        }
+      },
+      "b_negative": {
+        "name": "B negative",
+        "state": {
+          "critical": "Critical",
+          "very_low": "Very low",
+          "low": "Low",
+          "need_more": "Need more",
+          "ok": "Ok",
+          "good": "Good",
+          "not_collected": "Not collected"
+        },
+        "state_attributes": {
+          "label": {
+            "name": "Label"
+          },
+          "appeal": {
+            "name": "Appeal",
+            "state": {
+              "true": "Yes",
+              "false": "No"
+            }
+          }
+        }
+      },
+      "ab_positive": {
+        "name": "AB positive",
+        "state": {
+          "critical": "Critical",
+          "very_low": "Very low",
+          "low": "Low",
+          "need_more": "Need more",
+          "ok": "Ok",
+          "good": "Good",
+          "not_collected": "Not collected"
+        },
+        "state_attributes": {
+          "label": {
+            "name": "Label"
+          },
+          "appeal": {
+            "name": "Appeal",
+            "state": {
+              "true": "Yes",
+              "false": "No"
+            }
+          }
+        }
+      },
+      "ab_negative": {
+        "name": "AB negative",
+        "state": {
+          "critical": "Critical",
+          "very_low": "Very low",
+          "low": "Low",
+          "need_more": "Need more",
+          "ok": "Ok",
+          "good": "Good",
+          "not_collected": "Not collected"
+        },
+        "state_attributes": {
+          "label": {
+            "name": "Label"
+          },
+          "appeal": {
+            "name": "Appeal",
+            "state": {
+              "true": "Yes",
+              "false": "No"
+            }
+          }
+        }
+      },
+      "plasma": {
+        "name": "Plasma",
+        "state": {
+          "need_more": "Need more",
+          "ok": "Ok",
+          "good": "Good"
+        },
+        "state_attributes": {
+          "label": {
+            "name": "Label"
+          }
+        }
+      },
+      "plasma_supply": {
+        "name": "Plasma supply"
+      },
+      "last_updated": {
+        "name": "Last updated"
+      }
+    }
+  }
+}
