@@ -45,7 +45,7 @@ async def async_setup_entry(
         LifebloodLevelSensor(coordinator, blood_type) for blood_type in blood_types
     ]
     if PLASMA in blood_types:
-        entities.append(LifebloodPlasmaSupplySensor(coordinator))
+        entities.append(LifebloodPlasmaShortfallSensor(coordinator))
     entities.append(LifebloodLastUpdatedSensor(coordinator))
     async_add_entities(entities)
 
@@ -106,20 +106,39 @@ class LifebloodLevelSensor(LifebloodEntity, SensorEntity):
         return attrs
 
 
-class LifebloodPlasmaSupplySensor(LifebloodEntity, SensorEntity):
-    """The percentage Lifeblood attaches to the plasma drop."""
+class LifebloodPlasmaShortfallSensor(LifebloodEntity, SensorEntity):
+    """How far plasma supply is below target, in percentage points.
+
+    Derived from the percentage Lifeblood attaches to the plasma drop, which
+    behaves like supply against target (100% = on target). A raw 96% reads
+    as "nearly full" next to a "Need more" level, so this shows the gap
+    instead. Above target is floored at 0 rather than going negative; the
+    raw figure stays available as an attribute.
+    """
 
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 1
 
     def __init__(self, coordinator: LifebloodDataUpdateCoordinator) -> None:
-        super().__init__(coordinator, f"{PLASMA}_supply")
+        super().__init__(coordinator, f"{PLASMA}_shortfall")
+
+    @property
+    def _percent(self) -> float | None:
+        level = self.coordinator.data.levels.get(PLASMA)
+        return level.percent if level else None
 
     @property
     def native_value(self) -> float | None:
-        level = self.coordinator.data.levels.get(PLASMA)
-        return level.percent if level else None
+        percent = self._percent
+        if percent is None:
+            return None
+        return max(0.0, round(100 - percent, 2))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        percent = self._percent
+        return None if percent is None else {"percent_of_target": percent}
 
 
 class LifebloodLastUpdatedSensor(LifebloodEntity, SensorEntity):

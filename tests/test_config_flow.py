@@ -105,7 +105,7 @@ async def test_options_flow_removes_deselected(hass: HomeAssistant, mock_lifeblo
     await hass.async_block_till_done()
 
     registry = er.async_get(hass)
-    assert registry.async_get("sensor.lifeblood_all_australia_plasma_supply")
+    assert registry.async_get("sensor.lifeblood_all_australia_plasma_shortfall")
 
     result = await hass.config_entries.options.async_init(entry.entry_id)
     assert result["type"] is FlowResultType.FORM
@@ -119,7 +119,7 @@ async def test_options_flow_removes_deselected(hass: HomeAssistant, mock_lifeblo
     # Gone from the registry, not just left behind as unavailable.
     assert registry.async_get("sensor.lifeblood_all_australia_o_positive") is None
     assert registry.async_get("sensor.lifeblood_all_australia_plasma") is None
-    assert registry.async_get("sensor.lifeblood_all_australia_plasma_supply") is None
+    assert registry.async_get("sensor.lifeblood_all_australia_plasma_shortfall") is None
     state = hass.states.get("sensor.lifeblood_all_australia_o_positive")
     assert state is None or state.state == STATE_UNAVAILABLE
     # Not a blood type, so it stays.

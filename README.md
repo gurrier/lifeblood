@@ -44,7 +44,7 @@ For a region, e.g. Victoria:
 |---|---|---|
 | `sensor.lifeblood_victoria_o_positive` … `ab_negative` | `critical` | One per ticked red cell blood type |
 | `sensor.lifeblood_victoria_plasma` | `ok` | Plasma, all blood types |
-| `sensor.lifeblood_victoria_plasma_supply` | `100.11` % | The figure Lifeblood attaches to the plasma level |
+| `sensor.lifeblood_victoria_plasma_shortfall` | `0` % | How far plasma supply is below Lifeblood's target, e.g. NSW `3.72` %. `0` means on or above target. The raw figure is in the `percent_of_target` attribute (e.g. `100.11`) |
 | `sensor.lifeblood_victoria_last_updated` | timestamp | When Lifeblood last published |
 
 The blood type sensors are enum sensors, worst first:
@@ -60,6 +60,8 @@ The blood type sensors are enum sensors, worst first:
 | `not_collected` | Not collected | Red cells for this type aren't collected in this region |
 
 Plasma uses only `need_more`, `ok` and `good`.
+
+The plasma shortfall comes from a percentage Lifeblood includes in the page's markup but doesn't show on the site or document. It behaves like supply against target: so far, a shortfall of about 2% or more has shown as "Need more". It may disappear if Lifeblood changes the page.
 
 Each blood type sensor also has a `label` attribute (the text exactly as shown on the site) and an `appeal` attribute (`true` when the "Critical" appeal banner is showing).
 

@@ -106,7 +106,7 @@ class SupplyLevel:
     # Lifeblood's own appeal banner is showing for this type.
     appeal: bool = False
     # Only the plasma drop carries this - a percentage hidden in its class
-    # list, presumably supply against target.
+    # list. It behaves like supply against target: under ~98% reads "Need more".
     percent: float | None = None
 
 

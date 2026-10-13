@@ -105,8 +105,8 @@
           "good": "mdi:water-check"
         }
       },
-      "plasma_supply": {
-        "default": "mdi:water-percent"
+      "plasma_shortfall": {
+        "default": "mdi:water-minus"
       },
       "last_updated": {
         "default": "mdi:clock-outline"

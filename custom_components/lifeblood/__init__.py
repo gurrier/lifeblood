@@ -28,6 +28,33 @@ def selected_blood_types(config_entry: LifebloodConfigEntry) -> list[str]:
     )
 
 
+def _async_migrate_plasma_supply(
+    hass: HomeAssistant, config_entry: LifebloodConfigEntry
+) -> None:
+    """Rename the 0.1.0 "Plasma supply" sensor to "Plasma shortfall" in place.
+
+    Renaming the unique_id keeps the existing entity (and its history)
+    rather than leaving the old one orphaned beside a new duplicate. The
+    entity_id is renamed too, but only if it's still the generated one - an
+    entity_id someone has chosen themselves is left alone.
+    """
+    region = config_entry.data[CONF_REGION]
+    registry = er.async_get(hass)
+    old_entity_id = registry.async_get_entity_id(
+        Platform.SENSOR, DOMAIN, f"{region}_plasma_supply"
+    )
+    if old_entity_id is None:
+        return
+
+    updates: dict[str, str] = {"new_unique_id": f"{region}_plasma_shortfall"}
+    if old_entity_id.endswith("_plasma_supply"):
+        new_entity_id = old_entity_id.removesuffix("_plasma_supply") + "_plasma_shortfall"
+        if registry.async_get(new_entity_id) is None:
+            updates["new_entity_id"] = new_entity_id
+    _LOGGER.info("Migrating Lifeblood %s to plasma shortfall", old_entity_id)
+    registry.async_update_entity(old_entity_id, **updates)
+
+
 def _async_remove_deselected_entities(
     hass: HomeAssistant, config_entry: LifebloodConfigEntry
 ) -> None:
@@ -44,8 +71,8 @@ def _async_remove_deselected_entities(
         if not entry.unique_id.startswith(prefix):
             continue
         blood_type = entry.unique_id.removeprefix(prefix)
-        # Plasma supply % rides along with the plasma level sensor.
-        blood_type = blood_type.removesuffix("_supply")
+        # Plasma shortfall rides along with the plasma level sensor.
+        blood_type = blood_type.removesuffix("_shortfall")
         if blood_type in ALL_BLOOD_TYPES and blood_type not in keep:
             _LOGGER.debug("Removing deselected Lifeblood entity %s", entry.entity_id)
             registry.async_remove(entry.entity_id)
@@ -60,6 +87,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: LifebloodConfigEn
     await coordinator.async_config_entry_first_refresh()
     config_entry.runtime_data = coordinator
 
+    _async_migrate_plasma_supply(hass, config_entry)
     _async_remove_deselected_entities(hass, config_entry)
 
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)

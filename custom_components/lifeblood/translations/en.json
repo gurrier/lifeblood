@@ -274,8 +274,13 @@
           }
         }
       },
-      "plasma_supply": {
-        "name": "Plasma supply"
+      "plasma_shortfall": {
+        "name": "Plasma shortfall",
+        "state_attributes": {
+          "percent_of_target": {
+            "name": "Percent of target"
+          }
+        }
       },
       "last_updated": {
         "name": "Last updated"
