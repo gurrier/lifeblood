@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import slugify
 
 from . import selected_blood_types
 from .api import SupplyLevel
@@ -61,9 +62,16 @@ class LifebloodEntity(CoordinatorEntity[LifebloodDataUpdateCoordinator]):
         region = coordinator.region
         self._attr_translation_key = key
         self._attr_unique_id = f"{region}_{key}"
+        # The device is named for the region alone, since its name prefixes
+        # every entity's friendly name - "Lifeblood NSW A positive" pushed
+        # the level itself off the edge of dashboard buttons. The entity_id
+        # keeps "lifeblood_" so new installs don't get a bare, clash-prone
+        # sensor.nsw_a_positive; it only applies when the entity is first
+        # registered, so existing entity_ids are untouched.
+        self.entity_id = f"sensor.{slugify(f'lifeblood {REGION_NAMES[region]}')}_{key}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, region)},
-            name=f"Lifeblood {REGION_NAMES[region]}",
+            name=REGION_NAMES[region],
             manufacturer="Australian Red Cross Lifeblood",
             entry_type=DeviceEntryType.SERVICE,
             configuration_url=SOURCE_URL,

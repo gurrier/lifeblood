@@ -38,6 +38,8 @@ async def test_national_sensors(hass: HomeAssistant, mock_lifeblood) -> None:
 
     state = hass.states.get("sensor.lifeblood_all_australia_o_positive")
     assert state.state == "critical"
+    # No "Lifeblood" prefix eating the space on dashboard buttons.
+    assert state.attributes["friendly_name"] == "All Australia O positive"
     assert state.attributes["device_class"] == "enum"
     assert state.attributes["options"][0] == "critical"
     assert state.attributes["label"] == "Critical"
@@ -62,7 +64,9 @@ async def test_national_sensors(hass: HomeAssistant, mock_lifeblood) -> None:
 
 async def test_regional_sensors(hass: HomeAssistant, mock_lifeblood) -> None:
     await _setup(hass, "vic")
-    assert hass.states.get("sensor.lifeblood_victoria_ab_positive").state == "low"
+    state = hass.states.get("sensor.lifeblood_victoria_ab_positive")
+    assert state.state == "low"
+    assert state.attributes["friendly_name"] == "Victoria AB positive"
     # Above target floors at 0 rather than going negative.
     shortfall = hass.states.get("sensor.lifeblood_victoria_plasma_shortfall")
     assert shortfall.state == "0.0"
@@ -153,3 +157,31 @@ async def test_migration_keeps_custom_entity_id(hass: HomeAssistant, mock_lifebl
 
     assert registry.async_get("sensor.my_plasma").unique_id == "national_plasma_shortfall"
     assert hass.states.get("sensor.my_plasma").state == "1.68"
+
+
+async def test_existing_entity_ids_kept_after_device_rename(
+    hass: HomeAssistant, mock_lifeblood
+) -> None:
+    """Entities registered under the old "Lifeblood NSW" device keep their ids."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="national",
+        data={CONF_REGION: "national", CONF_BLOOD_TYPES: ["a_positive"]},
+    )
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        "national_a_positive",
+        config_entry=entry,
+        suggested_object_id="lifeblood_national_a_positive",
+    )
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get("sensor.lifeblood_national_a_positive")
+    assert state.state == "critical"
+    assert state.attributes["friendly_name"] == "All Australia A positive"
+    assert hass.states.get("sensor.lifeblood_all_australia_a_positive") is None

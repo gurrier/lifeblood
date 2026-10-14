@@ -65,6 +65,24 @@ The plasma shortfall comes from a percentage Lifeblood includes in the page's ma
 
 Each blood type sensor also has a `label` attribute (the text exactly as shown on the site) and an `appeal` attribute (`true` when the "Critical" appeal banner is showing).
 
+## Dashboard card
+
+Each region is its own device, named for the region (e.g. "NSW"), so entities show as "NSW A positive". Home Assistant's suggested cards for a device are chosen by Home Assistant, not the integration. For a compact list, add an Entities card instead, and set short names:
+
+```yaml
+type: entities
+title: Blood supply NSW
+entities:
+  - entity: sensor.lifeblood_nsw_a_positive
+    name: A+
+  - entity: sensor.lifeblood_nsw_plasma
+    name: Plasma
+  - entity: sensor.lifeblood_nsw_plasma_shortfall
+    name: Plasma shortfall
+  - entity: sensor.lifeblood_nsw_last_updated
+    name: Updated
+```
+
 ## Example automation
 
 Notify when your blood type drops to Low or worse:
