@@ -2,7 +2,7 @@
 
 Tracks the [Australian Red Cross Lifeblood blood supply levels](https://www.lifeblood.com.au/donors/blood-plasma-platelets/blood-supply-levels) in Home Assistant, so you can see when your blood type is running low and get a nudge to book a donation.
 
-Lifeblood updates the figures once a day at about 6:00am (AEST/AEDT). The integration checks hourly.
+Lifeblood updates the figures once a day at about 6:00am (AEST/AEDT). The integration checks twice a day, at 6:30am and 6:30pm Sydney time, and when Home Assistant starts.
 
 ☕ If this integration's useful to you, [buy me a coffee](https://ko-fi.com/gurrier).
 

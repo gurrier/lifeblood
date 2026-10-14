@@ -13,10 +13,20 @@ SOURCE_URL = (
     "https://www.lifeblood.com.au/donors/blood-plasma-platelets/blood-supply-levels"
 )
 
-# Lifeblood publishes once a day, around 6:00am AEST/AEDT. Polling hourly
-# picks the new figures up within the hour without hammering a public
-# website for data that hasn't changed.
-UPDATE_INTERVAL = datetime.timedelta(hours=1)
+# Lifeblood publishes once a day, around 6:00am Sydney time. Rather than
+# polling a public website on a fixed interval - which, counting from
+# whenever Home Assistant started, could land at 5:59am and then sit on
+# yesterday's figures for the rest of the interval - check at fixed Sydney
+# times: shortly after publication, and again in the evening to catch a
+# late update. Plus once at startup.
+CHECK_TIMES: tuple[datetime.time, ...] = (
+    datetime.time(6, 30),
+    datetime.time(18, 30),
+)
+
+# A failed check is retried after this, rather than waiting for the next
+# scheduled one up to 12 hours later.
+RETRY_INTERVAL = datetime.timedelta(minutes=30)
 
 # Region keys are what we store in the config entry. Each maps to the value
 # Lifeblood's own region <select> posts, and to the short code it writes into
