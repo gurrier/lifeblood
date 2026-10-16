@@ -41,9 +41,8 @@ def test_parse_national_page() -> None:
         "ab_negative": "good",
         "plasma": "ok",
     }
-    assert data.levels["o_positive"].appeal is True
     assert data.levels["o_positive"].label == "Critical"
-    assert data.levels["ab_positive"].appeal is False
+    assert data.updated_text is not None and "14 October 2026" in data.updated_text
     assert data.levels["plasma"].percent == 98.32
     assert data.levels["o_positive"].percent is None
 
@@ -137,6 +136,67 @@ async def test_client_region_posts_form(hass, mock_lifeblood) -> None:
     _, _, form, _ = mock_lifeblood.mock_calls[1]
     assert form["lb_region_select"] == "victoria"
     assert form["form_build_id"] == "form-r8xf5UHwJZn4lmzrbgp21h5MAQpd9PKHHWbd8tUAmKo"
+
+
+def test_form_build_id_scoped_to_stock_form() -> None:
+    """Another Drupal form on the page must not supply the token."""
+    html = (
+        '<form><input name="form_build_id" value="form-other"/>'
+        '<input name="form_id" value="newsletter"/></form>'
+        '<form><input name="form_build_id" value="form-stock"/>'
+        '<input name="form_id" value="stock_level_form"/></form>'
+        '<form><input name="form_build_id" value="form-later"/>'
+        '<input name="form_id" value="contact"/></form>'
+    )
+    _, form_build_id = parse_levels(html, "vic")
+    assert form_build_id == "form-stock"
+
+
+def test_region_code_falls_back_to_id() -> None:
+    """Without the class-list code, the drop's id still names the region."""
+    html = (
+        '<div id="drop plasma-type VIC" class="drop-div plasma-block">'
+        '<div class="drop-plasma okay"></div><strong>Plasma</strong>'
+        '<div class="day-coverage">Ok</div></div>'
+    )
+    data, _ = parse_levels(html, "vic")
+    assert data.region_code == "VIC"
+    assert data.levels["plasma"].percent is None
+
+
+def test_plasma_level_outside_its_options_warns(caplog) -> None:
+    html = (
+        '<div class="drop-div plasma-block VIC 90%"><div class="drop-plasma low"></div>'
+        '<strong>Plasma</strong><div class="day-coverage">Low</div></div>'
+    )
+    data, _ = parse_levels(html, "vic")
+    assert data.levels["plasma"].level == "low"
+    assert "isn't a level Plasma has had before" in caplog.text
+
+
+def test_unparseable_updated_warns(caplog) -> None:
+    html = '<div class="last-updated">Updated 6am, 14 Oct 2026</div>'
+    data, _ = parse_levels(html, "national")
+    assert data.updated is None
+    assert data.updated_text == "Updated 6am, 14 Oct 2026"
+    assert "Couldn't parse Lifeblood's updated time" in caplog.text
+
+
+async def test_client_accepts_page_without_region_code(hass, aioclient_mock, caplog) -> None:
+    """A national page whose plasma drop is gone still yields the red cells."""
+    page = load_fixture("page_national.html")
+    start = page.index('<div class="plasma-wrapper">')
+    end = page.index("</div>", page.index('day-coverage">  Ok', start)) + len("</div>")
+    aioclient_mock.get(SOURCE_URL, text=page[:start] + page[end:])
+
+    client = LifebloodClient(async_get_clientsession(hass), "test")
+    data = await client.async_get_levels("national")
+
+    assert data.region_code is None
+    assert "plasma" not in data.levels
+    assert data.levels["o_positive"].level == "critical"
+    assert "No region code" in caplog.text
+    assert aioclient_mock.call_count == 1
 
 
 async def test_client_wrong_region_returned(hass, mock_lifeblood) -> None:

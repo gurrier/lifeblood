@@ -36,39 +36,38 @@ async def test_national_sensors(hass: HomeAssistant, mock_lifeblood) -> None:
     entry = await _setup(hass)
     assert entry.state is ConfigEntryState.LOADED
 
-    state = hass.states.get("sensor.lifeblood_all_australia_o_positive")
+    state = hass.states.get("sensor.lifeblood_australia_o_positive")
     assert state.state == "critical"
     # No "Lifeblood" prefix eating the space on dashboard buttons.
-    assert state.attributes["friendly_name"] == "All Australia O positive"
+    assert state.attributes["friendly_name"] == "Australia O positive"
     assert state.attributes["device_class"] == "enum"
     assert state.attributes["options"][0] == "critical"
     assert state.attributes["label"] == "Critical"
-    assert state.attributes["appeal"] is True
+    assert "appeal" not in state.attributes
 
-    assert hass.states.get("sensor.lifeblood_all_australia_ab_positive").state == "need_more"
-    assert hass.states.get("sensor.lifeblood_all_australia_ab_negative").state == "good"
+    assert hass.states.get("sensor.lifeblood_australia_ab_positive").state == "need_more"
+    assert hass.states.get("sensor.lifeblood_australia_ab_negative").state == "good"
 
-    plasma = hass.states.get("sensor.lifeblood_all_australia_plasma")
+    plasma = hass.states.get("sensor.lifeblood_australia_plasma")
     assert plasma.state == "ok"
     assert plasma.attributes["options"] == ["need_more", "ok", "good"]
-    assert "appeal" not in plasma.attributes
 
-    shortfall = hass.states.get("sensor.lifeblood_all_australia_plasma_shortfall")
+    shortfall = hass.states.get("sensor.lifeblood_australia_plasma_shortfall")
     assert shortfall.state == "1.68"
     assert shortfall.attributes["percent_of_target"] == 98.32
     assert (
-        hass.states.get("sensor.lifeblood_all_australia_last_updated").state
+        hass.states.get("sensor.lifeblood_australia_last_updated").state
         == "2026-10-13T19:00:00+00:00"
     )
 
 
 async def test_regional_sensors(hass: HomeAssistant, mock_lifeblood) -> None:
     await _setup(hass, "vic")
-    state = hass.states.get("sensor.lifeblood_victoria_ab_positive")
+    state = hass.states.get("sensor.lifeblood_vic_ab_positive")
     assert state.state == "low"
-    assert state.attributes["friendly_name"] == "Victoria AB positive"
+    assert state.attributes["friendly_name"] == "VIC AB positive"
     # Above target floors at 0 rather than going negative.
-    shortfall = hass.states.get("sensor.lifeblood_victoria_plasma_shortfall")
+    shortfall = hass.states.get("sensor.lifeblood_vic_plasma_shortfall")
     assert shortfall.state == "0.0"
     assert shortfall.attributes["percent_of_target"] == 100.11
 
@@ -90,7 +89,7 @@ async def test_sensors_unavailable_after_failed_update(
     await hass.async_block_till_done()
 
     assert (
-        hass.states.get("sensor.lifeblood_all_australia_o_positive").state
+        hass.states.get("sensor.lifeblood_australia_o_positive").state
         == STATE_UNAVAILABLE
     )
 
@@ -183,5 +182,44 @@ async def test_existing_entity_ids_kept_after_device_rename(
 
     state = hass.states.get("sensor.lifeblood_national_a_positive")
     assert state.state == "critical"
-    assert state.attributes["friendly_name"] == "All Australia A positive"
-    assert hass.states.get("sensor.lifeblood_all_australia_a_positive") is None
+    assert state.attributes["friendly_name"] == "Australia A positive"
+    assert hass.states.get("sensor.lifeblood_australia_a_positive") is None
+
+
+async def test_shortfall_and_last_updated_unavailable_without_values(
+    hass: HomeAssistant, aioclient_mock
+) -> None:
+    """No percent class and no Updated line -> unavailable, not 'unknown'."""
+    page = load_fixture("page_national.html")
+    page = page.replace("plasma-block National 98.32%", "plasma-block National")
+    start = page.index('<div class="last-updated">')
+    page = page[:start] + page[page.index("</div>", start) + len("</div>"):]
+    aioclient_mock.get(SOURCE_URL, text=page)
+
+    await _setup(hass)
+    assert hass.states.get("sensor.lifeblood_australia_plasma").state == "ok"
+    assert hass.states.get("sensor.lifeblood_australia_plasma_shortfall").state == STATE_UNAVAILABLE
+    assert hass.states.get("sensor.lifeblood_australia_last_updated").state == STATE_UNAVAILABLE
+
+
+async def test_migration_removes_stale_entity_when_new_exists(
+    hass: HomeAssistant, mock_lifeblood
+) -> None:
+    """Both plasma_supply and plasma_shortfall registered -> old one dropped, setup still loads."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="national",
+        data={CONF_REGION: "national", CONF_BLOOD_TYPES: ["plasma"]},
+    )
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    registry.async_get_or_create("sensor", DOMAIN, "national_plasma_supply", config_entry=entry)
+    new = registry.async_get_or_create("sensor", DOMAIN, "national_plasma_shortfall", config_entry=entry)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.LOADED
+    assert registry.async_get_entity_id("sensor", DOMAIN, "national_plasma_supply") is None
+    assert registry.async_get(new.entity_id).unique_id == "national_plasma_shortfall"
+    assert hass.states.get(new.entity_id).state == "1.68"

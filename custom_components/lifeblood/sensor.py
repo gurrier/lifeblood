@@ -17,7 +17,6 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
-from . import selected_blood_types
 from .api import SupplyLevel
 from .const import (
     DOMAIN,
@@ -26,6 +25,7 @@ from .const import (
     RED_CELL_LEVELS,
     REGION_NAMES,
     SOURCE_URL,
+    selected_blood_types,
 )
 from .coordinator import LifebloodConfigEntry, LifebloodDataUpdateCoordinator
 
@@ -106,12 +106,7 @@ class LifebloodLevelSensor(LifebloodEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         level = self._level
-        if level is None:
-            return None
-        attrs: dict[str, Any] = {"label": level.label}
-        if self._blood_type != PLASMA:
-            attrs["appeal"] = level.appeal
-        return attrs
+        return None if level is None else {"label": level.label}
 
 
 class LifebloodPlasmaShortfallSensor(LifebloodEntity, SensorEntity):
@@ -137,6 +132,10 @@ class LifebloodPlasmaShortfallSensor(LifebloodEntity, SensorEntity):
         return level.percent if level else None
 
     @property
+    def available(self) -> bool:
+        return super().available and self._percent is not None
+
+    @property
     def native_value(self) -> float | None:
         percent = self._percent
         if percent is None:
@@ -157,6 +156,10 @@ class LifebloodLastUpdatedSensor(LifebloodEntity, SensorEntity):
 
     def __init__(self, coordinator: LifebloodDataUpdateCoordinator) -> None:
         super().__init__(coordinator, "last_updated")
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.data.updated is not None
 
     @property
     def native_value(self) -> datetime.datetime | None:

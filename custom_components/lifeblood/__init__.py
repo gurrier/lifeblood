@@ -10,7 +10,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.loader import async_get_integration
 
-from .const import ALL_BLOOD_TYPES, CONF_BLOOD_TYPES, CONF_REGION, DOMAIN
+from .const import ALL_BLOOD_TYPES, CONF_REGION, DOMAIN, selected_blood_types
 from .coordinator import LifebloodConfigEntry, LifebloodDataUpdateCoordinator
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -18,14 +18,6 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 PLATFORMS = [Platform.SENSOR]
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def selected_blood_types(config_entry: LifebloodConfigEntry) -> list[str]:
-    """The blood types this entry tracks - options win over initial setup."""
-    return config_entry.options.get(
-        CONF_BLOOD_TYPES,
-        config_entry.data.get(CONF_BLOOD_TYPES, ALL_BLOOD_TYPES),
-    )
 
 
 def _async_migrate_plasma_supply(
@@ -46,7 +38,16 @@ def _async_migrate_plasma_supply(
     if old_entity_id is None:
         return
 
-    updates: dict[str, str] = {"new_unique_id": f"{region}_plasma_shortfall"}
+    new_unique_id = f"{region}_plasma_shortfall"
+    if registry.async_get_entity_id(Platform.SENSOR, DOMAIN, new_unique_id):
+        # Both exist (a restored backup, say). Renaming onto a unique_id
+        # that's taken raises and would block setup every start; the newer
+        # entity is the live one, so drop the stale original instead.
+        _LOGGER.info("Removing stale Lifeblood entity %s", old_entity_id)
+        registry.async_remove(old_entity_id)
+        return
+
+    updates: dict[str, str] = {"new_unique_id": new_unique_id}
     if old_entity_id.endswith("_plasma_supply"):
         new_entity_id = old_entity_id.removesuffix("_plasma_supply") + "_plasma_shortfall"
         if registry.async_get(new_entity_id) is None:

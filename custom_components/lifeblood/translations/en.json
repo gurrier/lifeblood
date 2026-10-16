@@ -83,13 +83,6 @@
         "state_attributes": {
           "label": {
             "name": "Label"
-          },
-          "appeal": {
-            "name": "Appeal",
-            "state": {
-              "true": "Yes",
-              "false": "No"
-            }
           }
         }
       },
@@ -107,13 +100,6 @@
         "state_attributes": {
           "label": {
             "name": "Label"
-          },
-          "appeal": {
-            "name": "Appeal",
-            "state": {
-              "true": "Yes",
-              "false": "No"
-            }
           }
         }
       },
@@ -131,13 +117,6 @@
         "state_attributes": {
           "label": {
             "name": "Label"
-          },
-          "appeal": {
-            "name": "Appeal",
-            "state": {
-              "true": "Yes",
-              "false": "No"
-            }
           }
         }
       },
@@ -155,13 +134,6 @@
         "state_attributes": {
           "label": {
             "name": "Label"
-          },
-          "appeal": {
-            "name": "Appeal",
-            "state": {
-              "true": "Yes",
-              "false": "No"
-            }
           }
         }
       },
@@ -179,13 +151,6 @@
         "state_attributes": {
           "label": {
             "name": "Label"
-          },
-          "appeal": {
-            "name": "Appeal",
-            "state": {
-              "true": "Yes",
-              "false": "No"
-            }
           }
         }
       },
@@ -203,13 +168,6 @@
         "state_attributes": {
           "label": {
             "name": "Label"
-          },
-          "appeal": {
-            "name": "Appeal",
-            "state": {
-              "true": "Yes",
-              "false": "No"
-            }
           }
         }
       },
@@ -227,13 +185,6 @@
         "state_attributes": {
           "label": {
             "name": "Label"
-          },
-          "appeal": {
-            "name": "Appeal",
-            "state": {
-              "true": "Yes",
-              "false": "No"
-            }
           }
         }
       },
@@ -251,13 +202,6 @@
         "state_attributes": {
           "label": {
             "name": "Label"
-          },
-          "appeal": {
-            "name": "Appeal",
-            "state": {
-              "true": "Yes",
-              "false": "No"
-            }
           }
         }
       },

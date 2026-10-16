@@ -28,6 +28,8 @@ from .const import (
     LEVEL_OK,
     LEVEL_VERY_LOW,
     PLASMA,
+    PLASMA_LEVELS,
+    RED_CELL_LEVELS,
     REGION_CODES,
     REGION_FORM_VALUES,
     SOURCE_URL,
@@ -78,6 +80,7 @@ PLASMA_CLASS_LEVELS: dict[str, str] = {
 }
 
 _PERCENT_RE = re.compile(r"^(\d+(?:\.\d+)?)%$")
+_PLASMA_ID_RE = re.compile(r"^drop plasma-type (\S+)$")
 _UPDATED_RE = re.compile(
     r"(\d{1,2}):(\d{2})\s*([ap]m).*?(\d{1,2}\s+[A-Za-z]+\s+\d{4})",
     re.IGNORECASE | re.DOTALL,
@@ -103,8 +106,6 @@ class SupplyLevel:
     level: str | None
     # Exactly as printed, kept so an unrecognised level is still visible.
     label: str
-    # Lifeblood's own appeal banner is showing for this type.
-    appeal: bool = False
     # Only the plasma drop carries this - a percentage hidden in its class
     # list. It behaves like supply against target: under ~98% reads "Need more".
     percent: float | None = None
@@ -118,6 +119,8 @@ class SupplyData:
     region_code: str | None
     updated: datetime.datetime | None
     levels: dict[str, SupplyLevel] = field(default_factory=dict)
+    # The raw "Updated ..." line, for diagnostics when it stops parsing.
+    updated_text: str | None = None
 
 
 class _StockLevelParser(HTMLParser):
@@ -132,13 +135,26 @@ class _StockLevelParser(HTMLParser):
         self._drop_depth = 0
         self._capture: str | None = None
         self._updated_depth = 0
+        # Per-<form> state: the build id is only kept from the form whose
+        # form_id is stock_level_form, so another Drupal form elsewhere on
+        # the page (a newsletter signup, say) can't supply the wrong token.
+        self._form_build_id: str | None = None
+        self._form_is_stock = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attr = dict(attrs)
         classes = (attr.get("class") or "").split()
 
-        if tag == "input" and attr.get("name") == "form_build_id":
-            self.form_build_id = attr.get("value")
+        if tag == "form":
+            self._form_build_id = None
+            self._form_is_stock = False
+            return
+        if tag == "input":
+            name = attr.get("name")
+            if name == "form_build_id":
+                self._form_build_id = attr.get("value")
+            elif name == "form_id" and attr.get("value") == "stock_level_form":
+                self._form_is_stock = True
             return
 
         if tag != "div" and tag != "strong":
@@ -154,6 +170,7 @@ class _StockLevelParser(HTMLParser):
             if tag == "div" and "drop-div" in classes:
                 self._drop = {
                     "outer": classes,
+                    "id": attr.get("id") or "",
                     "inner": [],
                     "name": "",
                     "label": "",
@@ -172,6 +189,10 @@ class _StockLevelParser(HTMLParser):
             self._capture = "label"
 
     def handle_endtag(self, tag: str) -> None:
+        if tag == "form":
+            if self._form_is_stock and self._form_build_id:
+                self.form_build_id = self._form_build_id
+            return
         if tag == "strong":
             self._capture = None
             return
@@ -202,11 +223,13 @@ def _parse_updated(text: str | None) -> datetime.datetime | None:
         return None
     match = _UPDATED_RE.search(text)
     if not match:
+        _LOGGER.warning("Couldn't parse Lifeblood's updated time from %r", text)
         return None
     hour, minute, ampm, date_text = match.groups()
     try:
         date = datetime.datetime.strptime(" ".join(date_text.split()), "%d %B %Y")
     except ValueError:
+        _LOGGER.warning("Couldn't parse Lifeblood's updated date from %r", text)
         return None
     hour_24 = int(hour) % 12 + (12 if ampm.lower() == "pm" else 0)
     return date.replace(hour=hour_24, minute=int(minute), tzinfo=LIFEBLOOD_TZ)
@@ -229,28 +252,36 @@ def _parse_drop(drop: dict[str, Any]) -> tuple[str, SupplyLevel] | None:
             "Unrecognised Lifeblood level %r for %s (classes %s), read as %s",
             label, name, inner, level,
         )
+    elif level not in (PLASMA_LEVELS if key == PLASMA else RED_CELL_LEVELS):
+        # A level we know, on a drop that has never shown it (say "Low" on
+        # plasma). The sensor can't represent it, so say why it's unknown.
+        _LOGGER.warning(
+            "Lifeblood shows %r for %s, which isn't a level %s has had before",
+            label, name, name,
+        )
 
     percent = None
     for cls in drop["outer"]:
         if match := _PERCENT_RE.match(cls):
             percent = float(match.group(1))
 
-    return key, SupplyLevel(
-        level=level,
-        label=label,
-        appeal="appeal-mode" in inner,
-        percent=percent,
-    )
+    return key, SupplyLevel(level=level, label=label, percent=percent)
 
 
 def _region_code(drops: list[dict[str, Any]]) -> str | None:
-    """Read the region code ("National", "VIC", ...) off the plasma drop."""
+    """Read the region code ("National", "VIC", ...) off the plasma drop.
+
+    It's written in two places: the class list ("plasma-block VIC 100.11%")
+    and the id ("drop plasma-type VIC"). Either will do.
+    """
     for drop in drops:
         outer = drop["outer"]
         if "plasma-block" in outer:
             idx = outer.index("plasma-block")
             if idx + 1 < len(outer) and not _PERCENT_RE.match(outer[idx + 1]):
                 return outer[idx + 1]
+        if match := _PLASMA_ID_RE.match(drop["id"]):
+            return match.group(1)
     return None
 
 
@@ -268,6 +299,7 @@ def parse_levels(html: str, region: str) -> tuple[SupplyData, str | None]:
         region=region,
         region_code=_region_code(parser.drops),
         updated=_parse_updated(parser.updated_text),
+        updated_text=parser.updated_text,
     )
     for drop in parser.drops:
         if parsed := _parse_drop(drop):
@@ -308,12 +340,20 @@ class LifebloodClient:
                 page = await resp.text()
 
             data, form_build_id = parse_levels(page, region)
+            if data.updated_text is None and data.levels:
+                _LOGGER.warning("No 'Updated' line found on the Lifeblood page")
 
             # The plain GET has always been the national figures, but check
             # rather than assume - if the page ever starts defaulting to a
             # region (by geolocation, say) we'd otherwise silently report
-            # that as "All Australia".
-            if data.region_code != REGION_CODES[region]:
+            # that as "All Australia". A page that names no region at all
+            # (plasma drop gone, say) is taken at face value: the red cell
+            # figures are still good, and an unverifiable region shouldn't
+            # cost every sensor.
+            wanted = REGION_CODES[region]
+            if data.region_code is None:
+                _LOGGER.warning("No region code on the Lifeblood page; can't verify it")
+            if region != "national" or data.region_code not in (None, wanted):
                 if not form_build_id:
                     raise LifebloodParseError("No form_build_id on page")
                 async with self._session.post(
@@ -333,6 +373,7 @@ class LifebloodClient:
                 # The "Updated" line sits outside the fragment the AJAX call
                 # replaces, so it's only ever on the full page.
                 regional.updated = data.updated
+                regional.updated_text = data.updated_text
                 data = regional
         except (TimeoutError, aiohttp.ClientError) as err:
             raise LifebloodConnectionError(str(err) or type(err).__name__) from err
@@ -340,10 +381,8 @@ class LifebloodClient:
             # resp.json() on a body that isn't JSON.
             raise LifebloodParseError(f"Invalid AJAX response: {err}") from err
 
-        if data.region_code != REGION_CODES[region]:
-            raise LifebloodParseError(
-                f"Asked for {REGION_CODES[region]} but got {data.region_code}"
-            )
+        if data.region_code is not None and data.region_code != wanted:
+            raise LifebloodParseError(f"Asked for {wanted} but got {data.region_code}")
         if not data.levels:
             raise LifebloodParseError("No blood supply levels found on page")
         return data

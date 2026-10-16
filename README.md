@@ -2,7 +2,7 @@
 
 Tracks the [Australian Red Cross Lifeblood blood supply levels](https://www.lifeblood.com.au/donors/blood-plasma-platelets/blood-supply-levels) in Home Assistant, so you can see when your blood type is running low and get a nudge to book a donation.
 
-Lifeblood updates the figures once a day at about 6:00am (AEST/AEDT). The integration checks twice a day, at 6:30am and 6:30pm Sydney time, and when Home Assistant starts.
+Lifeblood updates the figures once a day at about 6:00am (AEST/AEDT). The integration checks twice a day, at 6:30am and 6:30pm Sydney time, and when Home Assistant starts. If a check fails it retries after 30 minutes, then backs off until the next scheduled check.
 
 ☕ If this integration's useful to you, [buy me a coffee](https://ko-fi.com/gurrier).
 
@@ -38,14 +38,14 @@ To track more than one region, add the integration again.
 
 ## Entities
 
-For a region, e.g. Victoria:
+Each region is its own device, named with the short code (`NSW`, `VIC`, `Australia`) so entity names stay short on dashboard buttons: "NSW A positive". For a region, e.g. Victoria:
 
 | Entity | Example state | Notes |
 |---|---|---|
-| `sensor.lifeblood_victoria_o_positive` … `ab_negative` | `critical` | One per ticked red cell blood type |
-| `sensor.lifeblood_victoria_plasma` | `ok` | Plasma, all blood types |
-| `sensor.lifeblood_victoria_plasma_shortfall` | `0` % | How far plasma supply is below Lifeblood's target, e.g. NSW `3.72` %. `0` means on or above target. The raw figure is in the `percent_of_target` attribute (e.g. `100.11`) |
-| `sensor.lifeblood_victoria_last_updated` | timestamp | When Lifeblood last published |
+| `sensor.lifeblood_vic_o_positive` … `ab_negative` | `critical` | One per ticked red cell blood type |
+| `sensor.lifeblood_vic_plasma` | `ok` | Plasma, all blood types |
+| `sensor.lifeblood_vic_plasma_shortfall` | `0` % | How far plasma supply is below Lifeblood's target, e.g. NSW `3.72` %. `0` means on or above target. The raw figure is in the `percent_of_target` attribute (e.g. `100.11`) |
+| `sensor.lifeblood_vic_last_updated` | timestamp | When Lifeblood last published |
 
 The blood type sensors are enum sensors, worst first:
 
@@ -63,11 +63,11 @@ Plasma uses only `need_more`, `ok` and `good`.
 
 The plasma shortfall comes from a percentage Lifeblood includes in the page's markup but doesn't show on the site or document. It behaves like supply against target: so far, a shortfall of about 2% or more has shown as "Need more". It may disappear if Lifeblood changes the page.
 
-Each blood type sensor also has a `label` attribute (the text exactly as shown on the site) and an `appeal` attribute (`true` when the "Critical" appeal banner is showing).
+Each blood type sensor also has a `label` attribute: the text exactly as shown on the site.
 
 ## Dashboard card
 
-Each region is its own device, named for the region (e.g. "NSW"), so entities show as "NSW A positive". Home Assistant's suggested cards for a device are chosen by Home Assistant, not the integration. For a compact list, add an Entities card instead, and set short names:
+Home Assistant's suggested cards for a device are chosen by Home Assistant, not the integration. For a compact list, add an Entities card instead, and set short names:
 
 ```yaml
 type: entities
@@ -92,7 +92,7 @@ automation:
   - alias: "Lifeblood: O- needs donors"
     triggers:
       - trigger: state
-        entity_id: sensor.lifeblood_victoria_o_negative
+        entity_id: sensor.lifeblood_vic_o_negative
         to:
           - low
           - very_low
@@ -102,7 +102,7 @@ automation:
         data:
           title: "Blood supply"
           message: >
-            O- is {{ states('sensor.lifeblood_victoria_o_negative') | replace('_', ' ') }}
+            O- is {{ states('sensor.lifeblood_vic_o_negative') | replace('_', ' ') }}
             in Victoria. Book a donation: https://www.lifeblood.com.au
 ```
 

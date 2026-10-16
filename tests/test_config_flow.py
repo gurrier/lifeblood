@@ -29,7 +29,7 @@ async def test_user_flow(hass: HomeAssistant, mock_lifeblood) -> None:
         {CONF_REGION: "vic", CONF_BLOOD_TYPES: ["o_negative", "plasma"]},
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "Lifeblood Victoria"
+    assert result["title"] == "Lifeblood VIC"
     assert result["data"] == {
         CONF_REGION: "vic",
         CONF_BLOOD_TYPES: ["o_negative", "plasma"],
@@ -37,9 +37,11 @@ async def test_user_flow(hass: HomeAssistant, mock_lifeblood) -> None:
     assert result["result"].unique_id == "vic"
     await hass.async_block_till_done()
 
-    assert hass.states.get("sensor.lifeblood_victoria_o_negative").state == "critical"
-    assert hass.states.get("sensor.lifeblood_victoria_plasma").state == "ok"
-    assert hass.states.get("sensor.lifeblood_victoria_o_positive") is None
+    assert hass.states.get("sensor.lifeblood_vic_o_negative").state == "critical"
+    assert hass.states.get("sensor.lifeblood_vic_plasma").state == "ok"
+    assert hass.states.get("sensor.lifeblood_vic_o_positive") is None
+    # The validation fetch was reused by setup: one page GET + one POST, not two of each.
+    assert mock_lifeblood.call_count == 2
 
 
 async def test_user_flow_no_blood_types(hass: HomeAssistant, mock_lifeblood) -> None:
@@ -105,7 +107,7 @@ async def test_options_flow_removes_deselected(hass: HomeAssistant, mock_lifeblo
     await hass.async_block_till_done()
 
     registry = er.async_get(hass)
-    assert registry.async_get("sensor.lifeblood_all_australia_plasma_shortfall")
+    assert registry.async_get("sensor.lifeblood_australia_plasma_shortfall")
 
     result = await hass.config_entries.options.async_init(entry.entry_id)
     assert result["type"] is FlowResultType.FORM
@@ -115,12 +117,12 @@ async def test_options_flow_removes_deselected(hass: HomeAssistant, mock_lifeblo
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
 
-    assert hass.states.get("sensor.lifeblood_all_australia_a_positive").state == "critical"
+    assert hass.states.get("sensor.lifeblood_australia_a_positive").state == "critical"
     # Gone from the registry, not just left behind as unavailable.
-    assert registry.async_get("sensor.lifeblood_all_australia_o_positive") is None
-    assert registry.async_get("sensor.lifeblood_all_australia_plasma") is None
-    assert registry.async_get("sensor.lifeblood_all_australia_plasma_shortfall") is None
-    state = hass.states.get("sensor.lifeblood_all_australia_o_positive")
+    assert registry.async_get("sensor.lifeblood_australia_o_positive") is None
+    assert registry.async_get("sensor.lifeblood_australia_plasma") is None
+    assert registry.async_get("sensor.lifeblood_australia_plasma_shortfall") is None
+    state = hass.states.get("sensor.lifeblood_australia_o_positive")
     assert state is None or state.state == STATE_UNAVAILABLE
     # Not a blood type, so it stays.
-    assert registry.async_get("sensor.lifeblood_all_australia_last_updated")
+    assert registry.async_get("sensor.lifeblood_australia_last_updated")

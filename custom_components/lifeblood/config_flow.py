@@ -16,7 +16,6 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from . import selected_blood_types
 from .api import LifebloodClient, LifebloodConnectionError, LifebloodError
 from .const import (
     ALL_BLOOD_TYPES,
@@ -25,8 +24,10 @@ from .const import (
     DOMAIN,
     REGION_FORM_VALUES,
     REGION_NAMES,
+    USER_AGENT_TEMPLATE,
+    selected_blood_types,
 )
-from .coordinator import USER_AGENT_TEMPLATE, LifebloodConfigEntry
+from .coordinator import LifebloodConfigEntry, cache_validation_result
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -73,13 +74,14 @@ class LifebloodConfigFlow(ConfigFlow, domain=DOMAIN):
                     USER_AGENT_TEMPLATE.format(version="config-flow"),
                 )
                 try:
-                    await client.async_get_levels(region)
+                    data = await client.async_get_levels(region)
                 except LifebloodConnectionError:
                     errors["base"] = "cannot_connect"
-                except LifebloodError:
-                    _LOGGER.exception("Lifeblood page didn't parse")
+                except LifebloodError as err:
+                    _LOGGER.warning("Lifeblood page didn't parse: %s", err)
                     errors["base"] = "cannot_parse"
                 else:
+                    cache_validation_result(self.hass, data)
                     return self.async_create_entry(
                         title=f"Lifeblood {REGION_NAMES[region]}",
                         data={
