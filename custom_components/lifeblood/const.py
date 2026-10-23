@@ -107,6 +107,7 @@ BLOOD_TYPE_KEYS: dict[str, str] = {
 ALL_BLOOD_TYPES: list[str] = list(BLOOD_TYPE_KEYS.values())
 
 LEVEL_CRITICAL = "critical"
+LEVEL_URGENT = "urgent"
 LEVEL_VERY_LOW = "very_low"
 LEVEL_LOW = "low"
 LEVEL_NEED_MORE = "need_more"
@@ -114,11 +115,16 @@ LEVEL_OK = "ok"
 LEVEL_GOOD = "good"
 LEVEL_NOT_COLLECTED = "not_collected"
 
-# Worst first. "Critical" isn't in Lifeblood's own legend - it's an appeal
-# banner laid over "Very low" (the drop's aria-label still says very low) -
-# but it's what donors see, so it's kept as its own, worse, state.
+# Worst first. "Critical" and "Urgent" aren't in Lifeblood's own legend -
+# they're its appeal banner laid over "Very low" (the drop's aria-label
+# still says very low), worded "Critical" on red cells and "Urgent" on
+# plasma so far - but they're what donors see, so each is its own, worse,
+# state. Every drop accepts every level: Lifeblood has already shown plasma
+# a level outside its legend once, and an unrepresentable level is just a
+# silent "unknown".
 RED_CELL_LEVELS: list[str] = [
     LEVEL_CRITICAL,
+    LEVEL_URGENT,
     LEVEL_VERY_LOW,
     LEVEL_LOW,
     LEVEL_NEED_MORE,
@@ -127,7 +133,9 @@ RED_CELL_LEVELS: list[str] = [
     LEVEL_NOT_COLLECTED,
 ]
 
-PLASMA_LEVELS: list[str] = [LEVEL_NEED_MORE, LEVEL_OK, LEVEL_GOOD]
+# Plasma is collected everywhere, so "Not collected" is the one level it
+# can't have.
+PLASMA_LEVELS: list[str] = [lvl for lvl in RED_CELL_LEVELS if lvl != LEVEL_NOT_COLLECTED]
 
 
 def selected_blood_types(config_entry: ConfigEntry) -> list[str]:

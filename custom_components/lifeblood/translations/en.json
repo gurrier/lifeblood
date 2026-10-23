@@ -73,6 +73,7 @@
         "name": "O positive",
         "state": {
           "critical": "Critical",
+          "urgent": "Urgent",
           "very_low": "Very low",
           "low": "Low",
           "need_more": "Need more",
@@ -90,6 +91,7 @@
         "name": "O negative",
         "state": {
           "critical": "Critical",
+          "urgent": "Urgent",
           "very_low": "Very low",
           "low": "Low",
           "need_more": "Need more",
@@ -107,6 +109,7 @@
         "name": "A positive",
         "state": {
           "critical": "Critical",
+          "urgent": "Urgent",
           "very_low": "Very low",
           "low": "Low",
           "need_more": "Need more",
@@ -124,6 +127,7 @@
         "name": "A negative",
         "state": {
           "critical": "Critical",
+          "urgent": "Urgent",
           "very_low": "Very low",
           "low": "Low",
           "need_more": "Need more",
@@ -141,6 +145,7 @@
         "name": "B positive",
         "state": {
           "critical": "Critical",
+          "urgent": "Urgent",
           "very_low": "Very low",
           "low": "Low",
           "need_more": "Need more",
@@ -158,6 +163,7 @@
         "name": "B negative",
         "state": {
           "critical": "Critical",
+          "urgent": "Urgent",
           "very_low": "Very low",
           "low": "Low",
           "need_more": "Need more",
@@ -175,6 +181,7 @@
         "name": "AB positive",
         "state": {
           "critical": "Critical",
+          "urgent": "Urgent",
           "very_low": "Very low",
           "low": "Low",
           "need_more": "Need more",
@@ -192,6 +199,7 @@
         "name": "AB negative",
         "state": {
           "critical": "Critical",
+          "urgent": "Urgent",
           "very_low": "Very low",
           "low": "Low",
           "need_more": "Need more",
@@ -208,6 +216,10 @@
       "plasma": {
         "name": "Plasma",
         "state": {
+          "critical": "Critical",
+          "urgent": "Urgent",
+          "very_low": "Very low",
+          "low": "Low",
           "need_more": "Need more",
           "ok": "Ok",
           "good": "Good"

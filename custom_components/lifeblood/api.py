@@ -26,6 +26,7 @@ from .const import (
     LEVEL_NEED_MORE,
     LEVEL_NOT_COLLECTED,
     LEVEL_OK,
+    LEVEL_URGENT,
     LEVEL_VERY_LOW,
     PLASMA,
     PLASMA_LEVELS,
@@ -52,6 +53,7 @@ LIFEBLOOD_TZ = ZoneInfo("Australia/Sydney")
 # means the same thing on red cell and plasma drops.
 LABEL_LEVELS: dict[str, str] = {
     "critical": LEVEL_CRITICAL,
+    "urgent": LEVEL_URGENT,
     "very low": LEVEL_VERY_LOW,
     "low": LEVEL_LOW,
     "need more": LEVEL_NEED_MORE,
@@ -60,7 +62,7 @@ LABEL_LEVELS: dict[str, str] = {
     "not collected": LEVEL_NOT_COLLECTED,
 }
 
-# CSS classes are the fallback if the wording ever changes. They are NOT
+# CSS classes are the first fallback if the wording ever changes. They are NOT
 # interchangeable between the two kinds of drop: "good" is Ok on a red cell
 # drop but Good on the plasma drop (seen side by side in the ACT figures).
 RED_CELL_CLASS_LEVELS: dict[str, str] = {
@@ -74,9 +76,26 @@ RED_CELL_CLASS_LEVELS: dict[str, str] = {
 }
 
 PLASMA_CLASS_LEVELS: dict[str, str] = {
+    # Plasma's appeal banner has read "Urgent" (23 Oct 2026, every region).
+    "appeal-mode": LEVEL_URGENT,
     "need-more": LEVEL_NEED_MORE,
     "okay": LEVEL_OK,
     "good": LEVEL_GOOD,
+}
+
+# The last fallback: the screen-reader text on each drop, e.g. "blood type
+# O positive level is very low.", "...level is that we need more.",
+# "...is not collected.", "Plasma level is ok." It ignores appeal banners
+# (an urgent plasma appeal still reads "very low"), so it's only used when
+# neither the printed label nor the classes are recognised.
+_ARIA_RE = re.compile(r"\b(?:level is (?:that we )?|is )([a-z ]+?)\.?\s*$", re.IGNORECASE)
+ARIA_LEVELS: dict[str, str] = {
+    "very low": LEVEL_VERY_LOW,
+    "low": LEVEL_LOW,
+    "need more": LEVEL_NEED_MORE,
+    "ok": LEVEL_OK,
+    "good": LEVEL_GOOD,
+    "not collected": LEVEL_NOT_COLLECTED,
 }
 
 _PERCENT_RE = re.compile(r"^(\d+(?:\.\d+)?)%$")
@@ -171,6 +190,7 @@ class _StockLevelParser(HTMLParser):
                 self._drop = {
                     "outer": classes,
                     "id": attr.get("id") or "",
+                    "aria": attr.get("aria-label") or "",
                     "inner": [],
                     "name": "",
                     "label": "",
@@ -248,9 +268,11 @@ def _parse_drop(drop: dict[str, Any]) -> tuple[str, SupplyLevel] | None:
     if level is None:
         class_levels = PLASMA_CLASS_LEVELS if key == PLASMA else RED_CELL_CLASS_LEVELS
         level = next((class_levels[c] for c in inner if c in class_levels), None)
+        if level is None and (match := _ARIA_RE.search(drop["aria"])):
+            level = ARIA_LEVELS.get(match.group(1).lower())
         _LOGGER.warning(
-            "Unrecognised Lifeblood level %r for %s (classes %s), read as %s",
-            label, name, inner, level,
+            "Unrecognised Lifeblood level %r for %s (classes %s, aria-label %r), read as %s",
+            label, name, inner, drop["aria"], level,
         )
     elif level not in (PLASMA_LEVELS if key == PLASMA else RED_CELL_LEVELS):
         # A level we know, on a drop that has never shown it (say "Low" on

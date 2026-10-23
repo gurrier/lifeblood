@@ -72,12 +72,13 @@ def test_parse_ajax_act_ok_vs_good() -> None:
 @pytest.mark.parametrize(
     ("label", "drop_class", "plasma", "expected"),
     [
-        ("Urgent", "appeal-mode", False, "critical"),
-        ("Urgent", "critical", False, "very_low"),
+        ("Dire", "appeal-mode", False, "critical"),
+        ("Dire", "critical", False, "very_low"),
         ("Fine", "good", False, "ok"),
         ("Fine", "great", False, "good"),
         ("Fine", "good", True, "good"),
         ("Fine", "need-more", True, "need_more"),
+        ("Dire", "appeal-mode", True, "urgent"),
         ("Who knows", "unheard-of", False, None),
     ],
 )
@@ -166,12 +167,55 @@ def test_region_code_falls_back_to_id() -> None:
 
 def test_plasma_level_outside_its_options_warns(caplog) -> None:
     html = (
-        '<div class="drop-div plasma-block VIC 90%"><div class="drop-plasma low"></div>'
-        '<strong>Plasma</strong><div class="day-coverage">Low</div></div>'
+        '<div class="drop-div plasma-block VIC 90%"><div class="drop-plasma empty"></div>'
+        '<strong>Plasma</strong><div class="day-coverage">Not collected</div></div>'
     )
     data, _ = parse_levels(html, "vic")
-    assert data.levels["plasma"].level == "low"
+    assert data.levels["plasma"].level == "not_collected"
     assert "isn't a level Plasma has had before" in caplog.text
+
+
+def test_parse_plasma_urgent_appeal(caplog) -> None:
+    """23 Oct 2026: plasma in appeal mode, labelled "Urgent", in every region."""
+    data, _ = parse_levels(load_fixture("page_national_plasma_urgent.html"), "national")
+
+    assert data.region_code == "National"
+    assert data.updated == datetime.datetime(2026, 10, 23, 6, 0, tzinfo=LIFEBLOOD_TZ)
+    assert data.levels["plasma"].level == "urgent"
+    assert data.levels["plasma"].label == "Urgent"
+    assert data.levels["plasma"].percent == 112.24
+    assert data.levels["o_negative"].level == "ok"
+    assert data.levels["a_positive"].level == "good"
+    # A known label: nothing to warn about.
+    assert "Unrecognised" not in caplog.text
+    assert "isn't a level" not in caplog.text
+
+
+def test_parse_ajax_plasma_urgent() -> None:
+    data = parse_ajax_response(load_json_fixture("ajax_vic_plasma_urgent.json"), "vic")
+    assert data.region_code == "VIC"
+    assert data.levels["plasma"].level == "urgent"
+    assert data.levels["plasma"].percent == 116.85
+
+
+@pytest.mark.parametrize(
+    ("aria", "expected"),
+    [
+        ("Plasma level is very low.", "very_low"),
+        ("blood type AB positive level is that we need more.", "need_more"),
+        ("blood type B negative is not collected.", "not_collected"),
+        ("blood type O positive level is good.", "good"),
+        ("Something else entirely", None),
+    ],
+)
+def test_unknown_label_and_class_fall_back_to_aria(aria, expected) -> None:
+    """Neither label nor class recognised: the screen-reader text decides."""
+    html = (
+        f'<div class="drop-div Opos" aria-label="{aria}"><div class="drop O+ brand-new"></div>'
+        '<strong>O+</strong><div class="day-coverage">Brand new wording</div></div>'
+    )
+    data, _ = parse_levels(html, "vic")
+    assert data.levels["o_positive"].level == expected
 
 
 def test_unparseable_updated_warns(caplog) -> None:

@@ -51,7 +51,8 @@ The blood type sensors are enum sensors, worst first:
 
 | State | Shown as | Lifeblood's meaning |
 |---|---|---|
-| `critical` | Critical | Lifeblood is running an appeal. Shown on the site over "Very low". |
+| `critical` | Critical | Lifeblood is running an appeal for red cells. Shown on the site over "Very low". |
+| `urgent` | Urgent | Lifeblood is running an appeal for plasma. Shown on the site over "Very low". |
 | `very_low` | Very low | Give blood now |
 | `low` | Low | Give blood now |
 | `need_more` | Need more | Give in the next 5 days or so |
@@ -59,9 +60,9 @@ The blood type sensors are enum sensors, worst first:
 | `good` | Good | Supply is strong; consider plasma |
 | `not_collected` | Not collected | Red cells for this type aren't collected in this region |
 
-Plasma uses only `need_more`, `ok` and `good`.
+Plasma can show any of these except `not_collected`. Lifeblood's legend only lists Need more, Ok and Good for plasma, but it ran an "Urgent" plasma appeal in October 2026.
 
-The plasma shortfall comes from a percentage Lifeblood includes in the page's markup but doesn't show on the site or document. It behaves like supply against target: so far, a shortfall of about 2% or more has shown as "Need more". It may disappear if Lifeblood changes the page.
+The plasma shortfall comes from a percentage Lifeblood includes in the page's markup but doesn't show on the site or document. It usually tracks the plasma level (a shortfall of about 2% or more has shown as "Need more"), but not always: during the October 2026 "Urgent" appeal it was above 100% everywhere, so the shortfall read 0. Use the Plasma level sensor for alerts. The percentage may disappear if Lifeblood changes the page.
 
 Each blood type sensor also has a `label` attribute: the text exactly as shown on the site.
 

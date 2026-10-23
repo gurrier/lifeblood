@@ -50,7 +50,9 @@ async def test_national_sensors(hass: HomeAssistant, mock_lifeblood) -> None:
 
     plasma = hass.states.get("sensor.lifeblood_australia_plasma")
     assert plasma.state == "ok"
-    assert plasma.attributes["options"] == ["need_more", "ok", "good"]
+    assert plasma.attributes["options"] == [
+        "critical", "urgent", "very_low", "low", "need_more", "ok", "good"
+    ]
 
     shortfall = hass.states.get("sensor.lifeblood_australia_plasma_shortfall")
     assert shortfall.state == "1.68"
@@ -59,6 +61,15 @@ async def test_national_sensors(hass: HomeAssistant, mock_lifeblood) -> None:
         hass.states.get("sensor.lifeblood_australia_last_updated").state
         == "2026-10-13T19:00:00+00:00"
     )
+
+
+async def test_plasma_urgent_appeal(hass: HomeAssistant, aioclient_mock) -> None:
+    """The 23 Oct 2026 "Urgent" plasma appeal shows as urgent, not unknown."""
+    aioclient_mock.get(SOURCE_URL, text=load_fixture("page_national_plasma_urgent.html"))
+    await _setup(hass)
+    plasma = hass.states.get("sensor.lifeblood_australia_plasma")
+    assert plasma.state == "urgent"
+    assert plasma.attributes["label"] == "Urgent"
 
 
 async def test_regional_sensors(hass: HomeAssistant, mock_lifeblood) -> None:
