@@ -10,22 +10,26 @@ Lifeblood updates the figures once a day at about 6:00am (AEST/AEDT). The integr
 
 ### HACS (recommended)
 
-This integration isn't in the HACS default store yet, but you can add it to HACS as a custom repository and get updates through HACS like any other integration.
+Lifeblood Blood Supply Levels is in the HACS default store, so HACS installs it and offers updates like any other integration.
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=gurrier&repository=lifeblood&category=integration)
 
-Click the badge above, or add it by hand:
+Click the badge above, or:
 
-1. In HACS, open the menu → **Custom repositories**, and add `https://github.com/gurrier/lifeblood` as an **Integration**.
-2. Install **Lifeblood Blood Supply Levels** and restart Home Assistant.
+1. In HACS, search for **Lifeblood**.
+2. Open **Lifeblood Blood Supply Levels**, select **Download**, and restart Home Assistant.
+
+If you added this repository to HACS as a custom repository before it was in the default store, there's nothing to change: updates keep coming through HACS.
 
 ### Manual
 
-1. Download this repository: **Code → Download ZIP**, and unzip it.
+Only if you don't use HACS. You'll need to repeat these steps for every update.
+
+1. On the [latest release](https://github.com/gurrier/lifeblood/releases/latest), download **Source code (zip)** and unzip it.
 2. Copy the `custom_components/lifeblood` folder into your Home Assistant `config/custom_components/` folder (create `custom_components` if it doesn't exist). You should end up with `config/custom_components/lifeblood/manifest.json`.
 3. Restart Home Assistant.
 
-To update, replace the folder with the new version and restart again.
+To update, replace the folder with the one from the new release and restart again.
 
 ## Setup
 
