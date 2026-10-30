@@ -2,6 +2,8 @@
 
 Tracks the [Australian Red Cross Lifeblood blood supply levels](https://www.lifeblood.com.au/donors/blood-plasma-platelets/blood-supply-levels) in Home Assistant, so you can see when your blood type is running low and get a nudge to book a donation.
 
+📱 **Want a phone alert when your blood type is needed?** Once the integration is set up, [import the notification blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fgurrier%2Flifeblood%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Flifeblood%2Fblood_type_in_demand.yaml) in one click. [How it works](#get-notified-when-your-blood-type-is-needed).
+
 Lifeblood updates the figures once a day at about 6:00am (AEST/AEDT). The integration checks twice a day, at 6:30am and 6:30pm Sydney time, and when Home Assistant starts. If a check fails it retries after 30 minutes, then backs off until the next scheduled check.
 
 ☕ If this integration's useful to you, [buy me a coffee](https://ko-fi.com/gurrier).
