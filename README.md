@@ -48,7 +48,7 @@ Each region is its own device, named with the short code (`NSW`, `VIC`, `Austral
 |---|---|---|
 | `sensor.lifeblood_vic_o_positive` … `ab_negative` | `critical` | One per ticked red cell blood type |
 | `sensor.lifeblood_vic_plasma` | `ok` | Plasma, all blood types |
-| `sensor.lifeblood_vic_plasma_shortfall` | `0` % | How far plasma supply is below Lifeblood's target, e.g. NSW `3.72` %. `0` means on or above target. The raw figure is in the `percent_of_target` attribute (e.g. `100.11`) |
+| `sensor.lifeblood_vic_plasma_shortfall` | `0` % | Disabled by default (see below). How far plasma supply is below Lifeblood's target, e.g. NSW `3.72` %. `0` means on or above target. The raw figure is in the `percent_of_target` attribute (e.g. `100.11`) |
 | `sensor.lifeblood_vic_last_updated` | timestamp | When Lifeblood last published |
 
 The blood type sensors are enum sensors, worst first:
@@ -67,6 +67,8 @@ The blood type sensors are enum sensors, worst first:
 Plasma can show any of these except `not_collected`. Lifeblood's legend only lists Need more, Ok and Good for plasma, but it ran an "Urgent" plasma appeal in October 2026.
 
 The plasma shortfall comes from a percentage Lifeblood includes in the page's markup but doesn't show on the site or document. It usually tracks the plasma level (a shortfall of about 2% or more has shown as "Need more"), but not always: during the October 2026 "Urgent" appeal it was above 100% everywhere, so the shortfall read 0. Use the Plasma level sensor for alerts. The percentage may disappear if Lifeblood changes the page.
+
+Because of that, Plasma shortfall is disabled by default for new installs. To use it, open the sensor under **Settings → Devices & services → Lifeblood Blood Supply Levels**, select **Settings** (the cog), and turn on **Enabled**. Installs from before v0.3.0 keep it enabled.
 
 Each blood type sensor also has a `label` attribute: the text exactly as shown on the site.
 
@@ -88,9 +90,19 @@ entities:
     name: Updated
 ```
 
-## Example automation
+## Get notified when your blood type is needed
 
-Notify when your blood type drops to Low or worse:
+The easiest way is the included blueprint. Pick your blood type sensor, the levels you want to hear about, and your phone (it uses the Home Assistant Companion app):
+
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fgurrier%2Flifeblood%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Flifeblood%2Fblood_type_in_demand.yaml)
+
+Then **Settings → Automations & scenes → Blueprints → Lifeblood - notify when a blood type is in demand → Create automation**.
+
+It defaults to Critical, Urgent and Very low, and only notifies when the level gets worse: an improvement from Critical back to Very low stays quiet, and so do restarts and website outages. Make one automation per blood type, or per person in the house.
+
+### Writing your own automation
+
+If you'd rather write it yourself, for example to notify a whole household:
 
 ```yaml
 automation:
@@ -99,15 +111,17 @@ automation:
       - trigger: state
         entity_id: sensor.lifeblood_vic_o_negative
         to:
-          - low
           - very_low
           - critical
+        not_from:
+          - unavailable
+          - unknown
     actions:
       - action: notify.notify
         data:
           title: "Blood supply"
           message: >
-            O- is {{ states('sensor.lifeblood_vic_o_negative') | replace('_', ' ') }}
+            O- is {{ state_attr('sensor.lifeblood_vic_o_negative', 'label') }}
             in Victoria. Book a donation: https://www.lifeblood.com.au
 ```
 
@@ -116,3 +130,12 @@ automation:
 There's no public API. The integration reads the same server-rendered page you see in a browser. For a state or territory, it makes the same request the page's region dropdown does. If Lifeblood redesigns the page, the sensors will go unavailable until the integration is updated. Download diagnostics from the integration page and open an issue.
 
 This project isn't affiliated with or endorsed by Australian Red Cross Lifeblood.
+
+## Development
+
+```bash
+pip install -r requirements_test.txt
+python -m pytest
+```
+
+`python scripts/check_live_site.py` runs the parser against Lifeblood's live site for every region and fails if anything doesn't parse cleanly. GitHub runs it every morning after Lifeblood's update.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
@@ -32,6 +33,7 @@ async def _setup(hass: HomeAssistant, region: str = "national") -> MockConfigEnt
     return entry
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_national_sensors(hass: HomeAssistant, mock_lifeblood) -> None:
     entry = await _setup(hass)
     assert entry.state is ConfigEntryState.LOADED
@@ -72,6 +74,7 @@ async def test_plasma_urgent_appeal(hass: HomeAssistant, aioclient_mock) -> None
     assert plasma.attributes["label"] == "Urgent"
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_regional_sensors(hass: HomeAssistant, mock_lifeblood) -> None:
     await _setup(hass, "vic")
     state = hass.states.get("sensor.lifeblood_vic_ab_positive")
@@ -197,6 +200,7 @@ async def test_existing_entity_ids_kept_after_device_rename(
     assert hass.states.get("sensor.lifeblood_australia_a_positive") is None
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_shortfall_and_last_updated_unavailable_without_values(
     hass: HomeAssistant, aioclient_mock
 ) -> None:
@@ -234,3 +238,14 @@ async def test_migration_removes_stale_entity_when_new_exists(
     assert registry.async_get_entity_id("sensor", DOMAIN, "national_plasma_supply") is None
     assert registry.async_get(new.entity_id).unique_id == "national_plasma_shortfall"
     assert hass.states.get(new.entity_id).state == "1.68"
+
+
+async def test_plasma_shortfall_disabled_by_default(hass: HomeAssistant, mock_lifeblood) -> None:
+    """New installs get the shortfall sensor registered but disabled."""
+    await _setup(hass)
+    entry = er.async_get(hass).async_get("sensor.lifeblood_australia_plasma_shortfall")
+    assert entry is not None
+    assert entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+    assert hass.states.get("sensor.lifeblood_australia_plasma_shortfall") is None
+    # The level sensor is unaffected.
+    assert hass.states.get("sensor.lifeblood_australia_plasma").state == "ok"

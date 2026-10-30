@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import PropertyMock, patch
 
 import pytest
 
@@ -25,6 +26,21 @@ def load_json_fixture(name: str):
 def auto_enable_custom_integrations(enable_custom_integrations):
     """Let Home Assistant load custom_components/lifeblood."""
     return
+
+
+@pytest.fixture
+def entity_registry_enabled_by_default():
+    """Create every entity enabled, including ones disabled by default.
+
+    The same fixture Home Assistant's own test suite has; the custom
+    component test plugin doesn't ship it.
+    """
+    with patch(
+        "homeassistant.helpers.entity.Entity.entity_registry_enabled_default",
+        return_value=True,
+        new_callable=PropertyMock,
+    ):
+        yield
 
 
 @pytest.fixture

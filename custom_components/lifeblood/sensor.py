@@ -117,8 +117,15 @@ class LifebloodPlasmaShortfallSensor(LifebloodEntity, SensorEntity):
     as "nearly full" next to a "Need more" level, so this shows the gap
     instead. Above target is floored at 0 rather than going negative; the
     raw figure stays available as an attribute.
+
+    Disabled by default: the percentage isn't published or documented, and
+    it doesn't always agree with the level - during the October 2026 plasma
+    "Urgent" appeal it sat above 100% everywhere, so this read 0. Anyone who
+    wants the trend can enable it. Only affects newly created entities;
+    existing ones keep whatever enabled state they have.
     """
 
+    _attr_entity_registry_enabled_default = False
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 1

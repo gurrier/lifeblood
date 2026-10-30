@@ -1,0 +1,25 @@
+name: Live site check
+
+# Lifeblood has no API: the integration reads its public web page. This runs
+# the integration's own parser against the live site for every region each
+# morning, after Lifeblood's ~6am Sydney update, so a page change fails here
+# (and GitHub emails the maintainer) before users notice.
+on:
+  schedule:
+    # 21:00 UTC = 8am AEDT / 7am AEST.
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-site:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v7"
+      - uses: "actions/setup-python@v7"
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements_test.txt
+      - run: python scripts/check_live_site.py

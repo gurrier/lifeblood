@@ -1,0 +1,103 @@
+blueprint:
+  name: Lifeblood - notify when a blood type is in demand
+  description: >-
+    Sends a notification to your phone when a Lifeblood blood supply level
+    drops to one of the levels you choose, so you can book a donation while
+    it matters most.
+
+
+    It only notifies when the level gets worse: an improvement (say from
+    Critical back to Very low) stays quiet, as do restarts and website
+    outages.
+
+
+    Requires the
+    [Lifeblood Blood Supply Levels](https://github.com/gurrier/lifeblood)
+    integration and the Home Assistant Companion app on your phone.
+  domain: automation
+  source_url: https://github.com/gurrier/lifeblood/blob/main/blueprints/automation/lifeblood/blood_type_in_demand.yaml
+  author: gurrier
+  homeassistant:
+    min_version: 2025.2.0
+  input:
+    blood_type:
+      name: Blood type
+      description: >-
+        The Lifeblood sensor to watch: your blood type, or Plasma.
+      selector:
+        entity:
+          filter:
+            - integration: lifeblood
+              domain: sensor
+              device_class: enum
+    levels:
+      name: Notify at these levels
+      description: >-
+        Critical (red cells) and Urgent (plasma) are Lifeblood's appeal
+        banners, worse than Very low.
+      default:
+        - critical
+        - urgent
+        - very_low
+      selector:
+        select:
+          multiple: true
+          options:
+            - label: Critical
+              value: critical
+            - label: Urgent
+              value: urgent
+            - label: Very low
+              value: very_low
+            - label: Low
+              value: low
+            - label: Need more
+              value: need_more
+    notify_device:
+      name: Phone
+      description: The phone to notify, from the Home Assistant Companion app.
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+
+mode: queued
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input blood_type
+    to: !input levels
+    not_from:
+      - unavailable
+      - unknown
+
+conditions:
+  # Only when it got worse. The sensor lists its levels worst first, so a
+  # lower position means a worse level - this keeps working if Lifeblood
+  # adds a level, without updating the blueprint. No previous state means
+  # the sensor has just appeared (integration newly added), not a change.
+  - condition: template
+    value_template: >-
+      {% set options = trigger.to_state.attributes.options | default([]) %}
+      {{ trigger.from_state is not none
+         and (trigger.from_state.state not in options
+              or options.index(trigger.to_state.state)
+                 < options.index(trigger.from_state.state)) }}
+
+actions:
+  - variables:
+      label: >-
+        {{ trigger.to_state.attributes.label
+           | default(trigger.to_state.state | replace('_', ' ') | capitalize) }}
+  - device_id: !input notify_device
+    domain: mobile_app
+    type: notify
+    title: "{{ trigger.to_state.name }} is {{ label }}"
+    message: >-
+      Lifeblood says {{ trigger.to_state.name }} is {{ label }}.
+      Tap to see the levels and book a donation.
+    data:
+      # Android uses clickAction, iOS uses url.
+      clickAction: https://www.lifeblood.com.au/donors/blood-plasma-platelets/blood-supply-levels
+      url: https://www.lifeblood.com.au/donors/blood-plasma-platelets/blood-supply-levels
